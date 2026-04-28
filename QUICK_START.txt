@@ -1,0 +1,136 @@
+================================================================================
+🚀 STOIC MODEL TRAINING - QUICK START GUIDE
+================================================================================
+
+NVIDIA DGX GB10 (119.7 GB VRAM) - Optimized Pipeline
+
+--------------------------------------------------------------------------------
+SETUP (One-time)
+--------------------------------------------------------------------------------
+
+1. Activate Virtual Environment:
+   $ cd ~/projects/stoic
+   $ source venv/bin/activate
+
+2. Verify Setup:
+   $ python preflight_check.py
+   
+   Should show:
+   ✅ Virtual environment
+   ✅ PyTorch with CUDA
+   ✅ Google Drive mounted
+   ✅ Training data (2,648 examples)
+
+--------------------------------------------------------------------------------
+TRAINING PIPELINE
+--------------------------------------------------------------------------------
+
+Open notebook in VS Code:
+  ~/gdrive/Colab Notebooks/stoic/stoic_mistral_unsloth_colab.ipynb
+
+Then run cells in order:
+
+┌─────────────┬──────────────────────────────────────────────────────────┐
+│ Cells 1-4   │ Setup & GPU verification                (~1 min)         │
+├─────────────┼──────────────────────────────────────────────────────────┤
+│ Cell 5      │ Load training data                      (~1 sec)         │
+├─────────────┼──────────────────────────────────────────────────────────┤
+│ Cells 6-8   │ Load model & prepare dataset            (~2-3 min)       │
+├─────────────┼──────────────────────────────────────────────────────────┤
+│ Cells 9-10  │ Train with auto-checkpointing           (~30-45 min)     │
+│             │ ✓ Saves every 100 steps                                  │
+│             │ ✓ Auto-resumes if interrupted                            │
+├─────────────┼──────────────────────────────────────────────────────────┤
+│ Cell 11     │ Test inference (optional)               (~1 min)         │
+├─────────────┼──────────────────────────────────────────────────────────┤
+│ Cell 11b    │ Merge LoRA → full fp16 model            (~3-5 min)       │
+├─────────────┼──────────────────────────────────────────────────────────┤
+│ Cell 12     │ Convert to GGUF (q4, q5, q8)            (~10-15 min)     │
+└─────────────┴──────────────────────────────────────────────────────────┘
+
+TOTAL TIME: ~50-70 minutes (full pipeline)
+
+--------------------------------------------------------------------------------
+OUTPUT FILES (All auto-saved to Google Drive)
+--------------------------------------------------------------------------------
+
+📁 ~/gdrive/Colab Notebooks/stoic/
+
+├── checkpoints/              ← Training checkpoints (auto-resume)
+│   ├── checkpoint-100/
+│   ├── checkpoint-200/
+│   └── ... (keeps last 5)
+
+├── models_trained/           ← LoRA adapters (~100MB)
+│   └── stoic-mistral-7b-lora/
+│       ├── adapter_model.safetensors
+│       └── TRAINING_COMPLETE.txt ✓
+
+├── models_merged/            ← Full merged model (~14GB)
+│   └── stoic-mistral-merged-f16/
+│       ├── model-*.safetensors
+│       └── MERGE_COMPLETE.txt ✓
+
+└── gguf/                     ← Ready for Ollama!
+    ├── stoic-mistral-q4_k_m.gguf  (3.5GB) ← RECOMMENDED
+    ├── stoic-mistral-q5_k_m.gguf  (4.3GB)
+    ├── stoic-mistral-q8_0.gguf    (7GB)
+    └── CONVERSION_COMPLETE.txt ✓
+
+--------------------------------------------------------------------------------
+USING THE MODEL
+--------------------------------------------------------------------------------
+
+Import to Ollama:
+  $ cd ~/gdrive/"Colab Notebooks"/stoic/gguf
+  $ ollama create stoic -f <(echo 'FROM "./stoic-mistral-q4_k_m.gguf"
+  TEMPLATE """[INST] {{ .Prompt }} [/INST]"""
+  PARAMETER temperature 0.7
+  PARAMETER top_p 0.9')
+
+Test it:
+  $ ollama run stoic "What did Marcus Aurelius teach about virtue?"
+
+--------------------------------------------------------------------------------
+RECOVERY & TROUBLESHOOTING
+--------------------------------------------------------------------------------
+
+Training Interrupted?
+  → Just re-run Cell 10 - it auto-resumes from last checkpoint!
+
+Start Fresh?
+  $ rm -rf ~/gdrive/"Colab Notebooks"/stoic/checkpoints/*
+  → Then re-run Cell 10
+
+Check Training Status:
+  $ cat ~/gdrive/"Colab Notebooks"/stoic/models_trained/stoic-mistral-7b-lora/TRAINING_COMPLETE.txt
+
+Drive Not Mounted?
+  $ rclone mount gdrive: ~/gdrive --vfs-cache-mode writes --daemon
+
+Verify Setup:
+  $ cd ~/projects/stoic
+  $ source venv/bin/activate
+  $ python preflight_check.py
+
+--------------------------------------------------------------------------------
+PERFORMANCE (GB10 with 119.7 GB VRAM)
+--------------------------------------------------------------------------------
+
+✓ Batch size: 16 (vs 2 on T4)
+✓ Full precision: bf16 (no 4-bit quantization)
+✓ Training speed: ~0.08 sec/step (vs 0.5 on T4)
+✓ Memory usage: ~40-50GB VRAM (plenty of headroom!)
+✓ Total time: ~30-45 minutes training + ~15 minutes conversion
+
+HUGE speed improvement over T4!
+
+--------------------------------------------------------------------------------
+HELPERS
+--------------------------------------------------------------------------------
+
+Quick check:     $ python preflight_check.py
+Info:            $ cat README.md
+This guide:      $ cat QUICK_START.txt
+
+================================================================================
