@@ -17,4 +17,6 @@ output/
 !.env.example
 
 # Local/generated training data
+data/source-raw/
+data/source-clean/
 data/training-data/
