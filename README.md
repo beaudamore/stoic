@@ -207,3 +207,10 @@ pip install -r requirements.txt  # If you create one
 4. **CUDA GGUF**: llama.cpp built with CUDA for fast conversion
 5. **Auto-Resume**: Never lose training progress
 6. **Multi-Format**: Creates q4, q5, q8 GGUF variants automatically
+
+## 📚 Documentation
+
+- [docs/data-pipeline.md](docs/data-pipeline.md) — source cleaning and datagen flow
+- [docs/augmentation-roadmap.md](docs/augmentation-roadmap.md) — corpus audit and planned
+  augmentations: the missing Seneca *Epistulae Morales*, the Epicurus removal, why
+  Machiavelli stays excluded, and Musonius Rufus as the recommended next speaker
